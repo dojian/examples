@@ -33,11 +33,11 @@ def authenticate_user(username: str, password: str):
 
 #Login Endpoint
 @app.post("/login", reponse_model = Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user =authenticate_user(form_data.username, form_data.password)
-    access_token = create_access_token(data={"sub": user["username"]})
+async def login(form:OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form)
+    access_token = create_access_token({"sub":user["username"]})
     token_type = "bearer"
-    return {"access_token": access_token, "token_type": token_type}
+    return {"access_token":access_token,"token_type": token_type}
     
     
     
