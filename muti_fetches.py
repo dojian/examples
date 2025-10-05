@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import asyncio
+import time
 
 app = FastAPI()
 
@@ -33,6 +34,9 @@ async def fetch_orders(user_id: int):
         raise HTTPException(status_code=404, detail="Orders not found")
     return order
 
+#from tenacity import retry, stop_after_attempt, wait_fixed
+
+#@retry(stop=stop_after_attempt(3), wait=wait_fixed(0.3))
 async def fetch_notifications(user_id: int):
     notification = notifications.get(user_id, [])
     if not notification:
@@ -70,6 +74,14 @@ class DashboardResponse(BaseModel):
 
 @app.get("/dashboard/{user_id}", response_model=DashboardResponse)
 async def get_dashabord(user_id: int):
+    #in memory cache
+    cache = {}
+    CACHE_TTL = 60 #seconds
+    now =time.time()
+    if user_id in cache:
+        ts,cached_data = cache[user_id]
+        if now-ts<CACHE_TTL:
+            return cached_data
     try: 
         user_task = asyncio.create_task(fetch_user(user_id))
         orders_task = asyncio.create_task(fetch_orders(user_id))
@@ -83,17 +95,15 @@ async def get_dashabord(user_id: int):
             orders = []
         if isinstance(notifications,Exception):
             notifications = None
-        return {
+        response = {
             "user": user,
             "orders": orders,
             "notifications": notifications
         }
-        
+        cache[user_id]=(now, response)
+        return response
+    
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail =str(e))
-
-
-
-    
+        raise HTTPException(status_code=500,detail = str(e))
