@@ -23,7 +23,7 @@ async def http_middleware_error_handler(request:Request, call_next):
     except Exception as e:
         return JSONResponse(
             status_code = 500,
-            content = {"detail":"Oops! Something went wrong and we caught it! Our middleware is on it!"}
+            content = {"detail":f"{str(e)} Our middleware is on it!"}
         )
 
 # Example endpoint with an unexpected exception
@@ -36,7 +36,7 @@ async def read_crew_member(crew_id: int):
     # Fetch and return the crew member details if they exist
     for member in crew:
         if member["id"] == crew_id:
-            return non_existent_variable  # Intentional error in the code to test exception handler
+            return crew  #non_existent_variable Intentional error in the code to test exception handler
 
     # Raise 404 error if the crew member is not found
     raise HTTPException(status_code=404, detail="Crew member not found")
